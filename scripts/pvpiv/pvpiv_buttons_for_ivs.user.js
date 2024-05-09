@@ -24,23 +24,34 @@
         // Hide select
         select.style.display = 'hidden';
 
+        // Create container for button selects
+        var container = document.createElement('div');
+        container.classList.add('button-select-container');
+        // Apply styles for the container
+        container.style.border = '1px solid #ccc';
+        container.style.borderRadius = '5px';
+        container.style.padding = '10px';
+        container.style.display = 'inline-block';
+
         // Create button select for each option
         var options = select.getElementsByTagName('option');
         for (var i = 0; i < options.length; i++) {
             var option = options[i];
+            if (option.textContent === '') {
+                continue;
+            }
             var buttonSelect = document.createElement('button');
             buttonSelect.textContent = option.textContent;
             buttonSelect.value = option.value;
             buttonSelect.onclick = function() {
-                select.value = this.value; // Set select value
-                // Trigger change event
-                var event = new Event('change', { bubbles: true });
-                select.dispatchEvent(event);
+                select.value = this.value;
                 option.onclick;
             };
-            // Insert button select before the original select element
-            select.parentNode.insertBefore(buttonSelect, select);
+            // Append button select to container
+            container.appendChild(buttonSelect);
         }
+        // Insert container before the original select element
+        select.parentNode.insertBefore(container, select);
     }
 
     // Call the function with your select ID
@@ -48,5 +59,21 @@
     convertSelectToButtonSelect('aIV[0]');
     convertSelectToButtonSelect('dIV[0]');
     convertSelectToButtonSelect('sIV[0]');
+
+    // Find the table
+    var table = document.getElementById('inputTable');
+    if (table) {
+        // Get the tbody element containing all the rows
+        var tbody = table.querySelector('tbody');
+        if (tbody) {
+            // Iterate over each row of the tbody (excluding the first row)
+            for (var i = 1; i < tbody.rows.length; i++) {
+                // Convert select elements to button selects in the row
+                convertSelectToButtonSelectInTable(`aIV[${i-1}]`);
+                convertSelectToButtonSelectInTable(`dIV[${i-1}]`);
+                convertSelectToButtonSelectInTable(`sIV[${i-1}]`);
+            }
+        }
+    }
 
 })();
