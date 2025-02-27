@@ -9,71 +9,126 @@
 // @updateURL    https://github.com/vincentllyu/MonkeyScripts/raw/main/scripts/pvpiv/pvpiv_buttons_for_ivs.user.js
 // @installURL   https://github.com/vincentllyu/MonkeyScripts/raw/main/scripts/pvpiv/pvpiv_buttons_for_ivs.user.js
 // @downloadURL  https://github.com/vincentllyu/MonkeyScripts/raw/main/scripts/pvpiv/pvpiv_buttons_for_ivs.user.js
-// @run-at       document-idle
+// @run-at       document-end
 // ==/UserScript==
 
 (function() {
     'use strict';
 
-    // Function to convert select module to button select
-    function convertSelectToButtonSelect(selectId) {
-        // Get select element
-        var select = document.getElementById(selectId);
-        if (!select) return;
+    const COLORS = ['#ff4d4d', '#4d79ff', '#ffd633'];
+    const TEXT_COLORS = ['white', 'white', 'black'];
 
-        // Hide select
-        select.style.display = 'hidden';
+    function createButton(select, option, color, textColor, container) {
+        let button = document.createElement('button');
+        button.textContent = option.textContent;
+        button.value = option.value;
 
-        // Create container for button selects
-        var container = document.createElement('div');
-        container.classList.add('button-select-container');
-        // Apply styles for the container
-        container.style.border = '1px solid #ccc';
-        container.style.borderRadius = '5px';
-        container.style.padding = '10px';
-        container.style.display = 'inline-block';
+        Object.assign(button.style, {
+            padding: '4px 8px',
+            border: `1px solid ${color}`,
+            borderRadius: '4px',
+            background: 'white',
+            color: color,
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            transition: 'all 0.2s ease-in-out',
+            flexShrink: '0'
+        });
 
-        // Create button select for each option
-        var options = select.getElementsByTagName('option');
-        for (var i = 0; i < options.length; i++) {
-            var option = options[i];
-            if (option.textContent === '') {
-                continue;
+        button.onmouseover = () => {
+            button.style.background = color;
+            button.style.color = textColor;
+        };
+
+        button.onmouseout = () => {
+            button.style.background = 'white';
+            button.style.color = color;
+        };
+
+        button.onclick = () => {
+            select.value = button.value;
+            select.dispatchEvent(new Event('input', { bubbles: true }));
+
+            Array.from(container.children).forEach(btn => {
+                btn.style.background = 'white';
+                btn.style.color = color;
+            });
+
+            button.style.background = color;
+            button.style.color = textColor;
+        };
+
+        container.appendChild(button);
+    }
+
+    function convertSelectToButtonSelect(select, groupIndex) {
+        if (!select || select.dataset.converted) return;
+
+        let container = document.createElement('div');
+        Object.assign(container.style, {
+            display: 'flex',
+            gap: '4px',
+            overflowX: 'auto',
+            whiteSpace: 'nowrap',
+            padding: '5px'
+        });
+
+        let color = COLORS[groupIndex % 3];
+        let textColor = TEXT_COLORS[groupIndex % 3];
+
+        Array.from(select.options).forEach(option => {
+            if (option.textContent.trim()) {
+                createButton(select, option, color, textColor, container);
             }
-            var buttonSelect = document.createElement('button');
-            buttonSelect.textContent = option.textContent;
-            buttonSelect.value = option.value;
-            buttonSelect.onclick = function() {
-                select.value = this.value;
-                option.onclick;
-            };
-            // Append button select to container
-            container.appendChild(buttonSelect);
-        }
-        // Insert container before the original select element
+        });
+
+        // Insert container before the select
         select.parentNode.insertBefore(container, select);
+        // Hide the original select element
+        select.style.display = 'none';
+        // Mark it as converted to avoid duplicate processing
+        select.dataset.converted = "true";
     }
 
-    // Call the function with your select ID
-    // Replace 'selectId' with your actual ID
-    convertSelectToButtonSelect('aIV[0]');
-    convertSelectToButtonSelect('dIV[0]');
-    convertSelectToButtonSelect('sIV[0]');
+    function processTable() {
+        let table = document.getElementById('inputTable');
+        if (!table) return;
 
-    // Find the table
-    var table = document.getElementById('inputTable');
-    if (table) {
-        // Get the tbody element containing all the rows
-        var tbody = table.querySelector('tbody');
-        if (tbody) {
-            // Iterate over each row of the tbody (excluding the first row)
-            for (var i = 1; i < tbody.rows.length; i++) {
-                // Convert select elements to button selects in the row
-                convertSelectToButtonSelectInTable(`aIV[${i-1}]`);
-                convertSelectToButtonSelectInTable(`dIV[${i-1}]`);
-                convertSelectToButtonSelectInTable(`sIV[${i-1}]`);
-            }
-        }
+        let tbody = table.querySelector('tbody');
+        if (!tbody) return;
+
+        Array.from(tbody.rows).forEach((row, rowIndex) => {
+            row.querySelectorAll('select').forEach((select, index) => {
+                convertSelectToButtonSelect(select, index);
+            });
+        });
     }
+
+    function observeTableChanges() {
+        let table = document.getElementById('inputTable');
+        if (!table) return;
+
+        let observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1 && node.tagName === 'TR') {
+                        console.log("New row added! Processing...");
+                        node.querySelectorAll('select').forEach((select, index) => {
+                            convertSelectToButtonSelect(select, index);
+                        });
+                    }
+                });
+            });
+        });
+
+        observer.observe(table.querySelector('tbody'), { childList: true });
+    }
+
+    // Initial processing on page load
+    window.addEventListener('load', () => {
+        processTable();
+        observeTableChanges();
+    });
 
 })();
