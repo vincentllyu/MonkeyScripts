@@ -14,7 +14,9 @@ To install a script, open its raw link in your browser. You can do this in two w
 
 ### Example:  
 Original URL:  https://github.com/vincentllyu/MonkeyScripts/blob/*/*user.js
+
 Modified URL:  https://github.com/vincentllyu/MonkeyScripts/raw/*/*user.js
+
 Once opened, your browser should prompt you to install the script.
 
 
