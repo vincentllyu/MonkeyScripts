@@ -51,8 +51,10 @@
             select.dispatchEvent(new Event('input', { bubbles: true }));
 
             Array.from(container.children).forEach(btn => {
-                btn.style.background = 'white';
-                btn.style.color = color;
+                if (btn.tagName === 'BUTTON') {
+                    btn.style.background = 'white';
+                    btn.style.color = color;
+                }
             });
 
             button.style.background = color;
@@ -69,6 +71,7 @@
         Object.assign(container.style, {
             display: 'flex',
             gap: '4px',
+            alignItems: 'center',
             overflowX: 'auto',
             whiteSpace: 'nowrap',
             padding: '5px'
@@ -83,10 +86,10 @@
             }
         });
 
-        // Insert container before the select
+        // Move the original select inside the container
         select.parentNode.insertBefore(container, select);
-        // Hide the original select element
-        select.style.display = 'none';
+        container.appendChild(select); // Append the select inside the container
+
         // Mark it as converted to avoid duplicate processing
         select.dataset.converted = "true";
     }
